@@ -311,38 +311,7 @@ public class KazanController {
 		}
 		
 	}
-	
-	@RequestMapping(path="/test")
-	public @ResponseBody String test() {
-//		List<ObjectNormal> objectNormals = objectNormalRepository.getAll();
-//		System.out.println("Normal size:" + objectNormals.size());
-//		for (BaseObject o: objectNormals) {
-//			System.out.println(o.getSymbol());
-//		}
-//		
-//		List<ObjectAlert> objectAlerts = objectAlertRepository.getAll();
-//		System.out.println("Alert size:" + objectAlerts.size());
-//		for (BaseObject o: objectAlerts) {
-//			System.out.println(o.getSymbol());
-//		}
-//		
-//		List<ObjectMaster> objectMasters = objectMasterRepository.getAll();
-//		System.out.println("Master size:" + objectMasters.size());
-//		for (BaseObject o: objectMasters) {
-//			System.out.println(o.getSymbol());
-//		}
-//		
-//		String[][] userAndTime = objectNormalRepository.getUserIdAndUpdateTime("USDCAD", 1);		
-//		for (int i = 0; i < userAndTime.length; i++) {
-//			System.out.println(userAndTime[i][0] + "|" + userAndTime[i][1]);
-//		}
-//		
-//		List<Message> listMessage = new ArrayList<Message>();
-//		sendMessagetoTelegram(listMessage);
-		
-		return "";
-	}
-	
+
 	boolean checkPushPermissionByRoleIdAndMode(int roleId, int mode) {
 		if(roleId==4 || roleId==5) return false;
 		if(roleId==3 && mode==3) return true;
