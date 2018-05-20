@@ -1,13 +1,16 @@
 package com.kazan.controller;
 
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.Date;
 import java.util.List;
 
+import org.apache.commons.codec.binary.Base64;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.RequestBody;
+import org.springframework.web.bind.annotation.RequestHeader;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestMethod;
 import org.springframework.web.bind.annotation.ResponseBody;
@@ -27,6 +30,7 @@ import com.kazan.repository.GroupRepository;
 import com.kazan.repository.UserGroupRoleRepository;
 import com.kazan.repository.UserRepository;
 import com.kazan.wrapper.AlertRequestWrapper;
+import com.kazan.wrapper.AuthorizationHeaderWrapper;
 import com.kazan.wrapper.ObjectRequestWrapper;
 
 @RestController    
@@ -76,7 +80,7 @@ public class KazanController {
 	private int checkMessagePermission(String groupAliase,int userId) {
 		int groupId = ugrRepository.getGroupIdByGroupAlias(userId, groupAliase);
 		if (-1 == groupId) return -1;
-		int roleId = ugrRepository.getGroupRoleByUserId(userId, groupId); 
+		int roleId = ugrRepository.getByGroupIdUserId(userId, groupId); 
 		if(checkSendMessagePermissionByRoleIdAndMode(roleId, 0)) return groupId;
 		return -1;
 	}
@@ -114,7 +118,7 @@ public class KazanController {
 	private int synObject(String groupAliase,int userId, String symbol, int mode, List<BaseObject> objects) {
 		int groupId = ugrRepository.getGroupIdByGroupAlias(userId, groupAliase);
 		if (-1 == groupId) return -1;
-		int roleId = ugrRepository.getGroupRoleByUserId(userId, groupId, symbol); 
+		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, symbol); 
 		if(checkPushPermissionByRoleIdAndMode(roleId, mode)) {
 			try {
 				if(mode==3) {
@@ -240,7 +244,7 @@ public class KazanController {
 		if (-1 == groupId) {
 			return new ResponseEntity<String>("Group not found!", HttpStatus.UNAUTHORIZED);
 		}
-		int roleId = ugrRepository.getGroupRoleByUserId(userId, groupId, wrapperObject.getSymbol()); 
+		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, wrapperObject.getSymbol()); 
 		
 		if(checkGetPermissionByRoleIdAndMode(roleId, wrapperObject.getMode())) {
 			ObjectMapper mapper = new ObjectMapper();
@@ -291,7 +295,7 @@ public class KazanController {
 		if (-1 == groupId) {
 			return new ResponseEntity<String>("Group not found!", HttpStatus.UNAUTHORIZED);
 		}
-		int roleId = ugrRepository.getGroupRoleByUserId(userId, groupId, wrapperObject.getSymbol()); 
+		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, wrapperObject.getSymbol()); 
 		int mode = wrapperObject.getMode();
 		if(checkUserGetPermissionByRoleIdAndMode(roleId, mode)) {
 			ObjectMapper mapper = new ObjectMapper();
@@ -329,5 +333,54 @@ public class KazanController {
 	boolean checkUserGetPermissionByRoleIdAndMode(int roleId, int mode) {
 		if(roleId==2 || roleId==3) return true;
 		return false;
+	}
+	
+
+	@RequestMapping(method=RequestMethod.GET, path="/api/users/groups")
+	public @ResponseBody ResponseEntity<String> getAllGroupsByUser(@RequestHeader("Authorization") String authorizationHeader) {
+		
+        System.out.println("------------ Decode JWT GET /api/users/groups ------------");
+        String[] split_string = authorizationHeader.split("\\.");
+        String base64EncodedHeader = split_string[0];
+        String base64EncodedBody = split_string[1];
+        String base64EncodedSignature = split_string[2];
+        Base64 base64Url = new Base64(true);
+
+        System.out.println("~~~~~~~~~ JWT Header ~~~~~~~");
+        String header = new String(base64Url.decode(base64EncodedHeader));
+        System.out.println("JWT Header : " + header);
+
+        System.out.println("~~~~~~~~~ JWT Body ~~~~~~~");
+        String body = new String(base64Url.decode(base64EncodedBody));
+        System.out.println("JWT Body : "+body);        
+        body = body.replace("cognito:username", "cognito_username");
+
+		ObjectMapper mapper = new ObjectMapper();
+		AuthorizationHeaderWrapper authorizationHeaderWrapper = null;
+		try {
+			authorizationHeaderWrapper = mapper.readValue(body, AuthorizationHeaderWrapper.class);
+		} catch (IOException e) {
+			System.out.println("KazanController.getAllGroupsByUser:" + e);
+			return new ResponseEntity<String>("Cannot read header!", HttpStatus.UNAUTHORIZED);
+		}
+		
+		int userId = userRepository.getIdByUsername(authorizationHeaderWrapper.getUsername());
+
+		if (-1 == userId) {
+			try {
+				return new ResponseEntity<String>(mapper.writeValueAsString(groupRepository.getAll()), HttpStatus.ACCEPTED);
+			} catch (JsonProcessingException e) {
+				System.out.println("KazanController.getAllGroupsByUser -1:" + e);
+				return new ResponseEntity<String>("Cannot get groups!", HttpStatus.UNAUTHORIZED);
+			}
+		}
+		else {
+			try {
+				return new ResponseEntity<String>(mapper.writeValueAsString(groupRepository.getGroupByIdList(ugrRepository.getGroupIdListByUserId(userId))), HttpStatus.ACCEPTED);
+			} catch (JsonProcessingException e) {
+				System.out.println("KazanController.getAllGroupsByUser:" + e);
+				return new ResponseEntity<String>("Cannot get groups!", HttpStatus.UNAUTHORIZED);
+			}
+		}
 	}
 }

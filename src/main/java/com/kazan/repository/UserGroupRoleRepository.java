@@ -39,7 +39,7 @@ public class UserGroupRoleRepository {
 	
 	
 	@Transactional
-	public int getGroupRoleByUserId(int userId, int groupId, String symbol) {
+	public int getByGroupIdUserIdSymbol(int userId, int groupId, String symbol) {
 		Query query = sessionFactory.getCurrentSession().createQuery("from UserGroupRole where userId = :userIdToSelect and groupId = :groupIdToSelect ");
 		query.setParameter("userIdToSelect", userId);
 		query.setParameter("groupIdToSelect", groupId);
@@ -67,7 +67,7 @@ public class UserGroupRoleRepository {
 	}
 	
 	@Transactional
-	public int getGroupRoleByUserId(int userId, int groupId) {
+	public int getByGroupIdUserId(int userId, int groupId) {
 		Query query = sessionFactory.getCurrentSession().createQuery("from UserGroupRole where userId = :userIdToSelect and groupId = :groupIdToSelect ");
 		query.setParameter("userIdToSelect", userId);
 		query.setParameter("groupIdToSelect", groupId);
@@ -84,6 +84,18 @@ public class UserGroupRoleRepository {
 			}
 		}
 		return -1;
+	}
+	
+	@Transactional
+	public List<Integer> getGroupIdListByUserId(int userId) {
+		Query query = sessionFactory.getCurrentSession().createQuery("select distinct groupId from UserGroupRole where userId = :userIdToSelect ");
+		query.setParameter("userIdToSelect", userId);
+		List<Integer> result = query.list();
+		if (null == result)
+			return new ArrayList<Integer>();
+		else {
+			return result;
+		}		
 	}
 	
 	@Transactional

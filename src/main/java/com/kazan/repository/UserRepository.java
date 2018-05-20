@@ -16,6 +16,8 @@ public class UserRepository {
 	
 	@Transactional
 	public int getIdByUsername(String username) {
+		if (null == username)
+			return -1;
 		KazanUser result = (KazanUser) geByUsername(username);
 		if (null == result)
 			return -1;
