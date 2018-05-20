@@ -110,6 +110,17 @@ public class BaseObject {
 
 	@Column(name = "group_id")
 	private Integer groupId;
+	
+	@Column(name = "objprop_timeframes")
+	private Integer objprop_timeframes;
+	
+	public Integer getObjprop_timeframes() {
+		return objprop_timeframes;
+	}
+
+	public void setObjprop_timeframes(Integer objprop_timeframes) {
+		this.objprop_timeframes = objprop_timeframes;
+	}
 
 	public BaseObject() {
 
@@ -412,6 +423,7 @@ public class BaseObject {
 		this.setSymbol(bo.getSymbol());
 		this.setUpdated_date(bo.getUpdated_date());
 		this.setUserId(bo.getUserId());		
+		this.setObjprop_timeframes(bo.getObjprop_timeframes());
 	}
 
 	@Override
