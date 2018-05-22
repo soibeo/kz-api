@@ -121,6 +121,9 @@ public class KazanController {
 		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, symbol); 
 		if(checkPushPermissionByRoleIdAndMode(roleId, mode)) {
 			try {
+				//Linh Dao added on 22/5/2018
+				// Có trường mode_id trong bảng object, với cả 3 mode sẽ delete theo User, Group, Symbol, mode
+				// Chỉ sử dụng bảng object
 				if(mode==3) {
 					objectNormalRepository.deleteBySymbolUserGroup(symbol, userId, groupId);
 				} else if(mode==2) {
@@ -139,6 +142,8 @@ public class KazanController {
 					ko.setUserId(userId);
 					ko.setGroupId(groupId);
 					ko.setUpdated_date(objectUdatedDate);
+					//Linh Dao added on 22/5/2018
+					// Có trường mode_id trong bảng object, với cả 3 mode sẽ inster theo User, Group, Symbol, mode
 					if(mode==3) {
 						objectNormalRepository.add(new ObjectNormal(ko));	
 					} else if(mode==2) {
@@ -254,12 +259,19 @@ public class KazanController {
 				if(! "".equalsIgnoreCase(wrapperObject.getGetFromUser()) && wrapperObject.getMode()==3) {
 					getFromUserId = userRepository.getIdByUsername(wrapperObject.getGetFromUser());
 				}
+				//Linh Dao added on 22/5/2018
+				// Tương tự như logic ở hàm user/get
+				int mode_id = wrapperObject.getMode();
 				if(-1 == getFromUserId) {
 					String[][] userUpdate = objectNormalRepository.getUserIdAndUpdateTime(wrapperObject.getSymbol(), groupId);
-					if (userUpdate.length > 0 && userUpdate[0].length > 0)
+					if (userUpdate.length > 0 && userUpdate[0].length > 0){
 						getFromUserId = userRepository.getIdByUsername(userUpdate[0][0]);
+						mode_id = userUpdate[0][2]; // lay userId và mode cua user cuoi cung
+					}
+						
 				}
 				
+				// select object theo group_id, symbol, mode_id, getFromUserId
 				if(wrapperObject.getMode()==3) {
 					return new ResponseEntity<String>(mapper.writeValueAsString(objectNormalRepository.getBySymbolUserGroup(wrapperObject.getSymbol(), getFromUserId, groupId)), HttpStatus.ACCEPTED);
 				} else if(wrapperObject.getMode()==2) {
@@ -296,11 +308,19 @@ public class KazanController {
 			return new ResponseEntity<String>("Group not found!", HttpStatus.UNAUTHORIZED);
 		}
 		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, wrapperObject.getSymbol()); 
-		int mode = wrapperObject.getMode();
-		if(checkUserGetPermissionByRoleIdAndMode(roleId, mode)) {
+		//Linh Dao added on 22/5/2018
+		//int mode = wrapperObject.getMode();
+		if(checkUserGetPermissionByRoleIdAndMode(roleId)) {
 			ObjectMapper mapper = new ObjectMapper();
 			try {
 				String[][] userObjects = null;
+				//Hien tai dang group bảng này theo  user_id, UpdateTime ==> Update sử dụng câu lệnh dưới đây
+				//select user_id, updated_date, mode_id from object 
+				//where group_id=2 and symbol = 'USDJPY' and mode_id>=roleId
+				//group by user_id, updated_date, mode_id
+				//order by updated_date
+				
+				//Return thêm mode_id
 				if (3 == mode)
 					userObjects  = objectNormalRepository.getUserIdAndUpdateTime(wrapperObject.getSymbol(), groupId);
 				else if (2 == mode)
