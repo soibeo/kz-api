@@ -121,8 +121,10 @@ public class KazanController {
 		int roleId = ugrRepository.getByGroupIdUserIdSymbol(userId, groupId, symbol); 
 		if(checkPushPermissionByRoleIdAndMode(roleId, mode)) {
 			try {
+				//Remove 2 table object_alert & object_master
 				if(mode==3) {
 					objectNormalRepository.deleteBySymbolUserGroup(symbol, userId, groupId);
+					
 				} else if(mode==2) {
 					objectMasterRepository.deleteBySymbolGroup(symbol, groupId);
 				} else if(mode==4 || mode==5) {
